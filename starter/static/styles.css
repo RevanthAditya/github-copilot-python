@@ -13,6 +13,7 @@
     --prefilled-text: #1f2937;
     --focus-bg: #dff6ff;
     --incorrect-bg: #ffcdd2;
+    --empty-bg: #fef3c7;
     --button-bg: #1976d2;
     --button-hover-bg: #1565c0;
     --message-text: #d32f2f;
@@ -41,6 +42,7 @@
     --prefilled-text: #f9fafb;
     --focus-bg: #20486b;
     --incorrect-bg: #7f1d1d;
+    --empty-bg: #78350f;
     --button-bg: #60a5fa;
     --button-hover-bg: #3b82f6;
     --message-text: #fca5a5;
@@ -116,6 +118,10 @@ h1 {
 
 .sudoku-cell.incorrect {
     background: var(--incorrect-bg);
+}
+
+.sudoku-cell.empty {
+    background: var(--empty-bg);
 }
 
 .sudoku-cell:nth-child(3n) {

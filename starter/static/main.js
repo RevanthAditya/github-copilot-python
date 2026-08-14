@@ -79,7 +79,7 @@ function createBoardElement() {
         if (val) {
           await validateBoard(false);
         } else {
-          input.classList.remove('incorrect');
+          input.classList.remove('incorrect', 'empty');
         }
       });
       rowDiv.appendChild(input);
@@ -336,6 +336,88 @@ async function checkSolution() {
   await validateBoard(true);
 }
 
+function getEmptyEditableCells() {
+  // Identify all empty, non-prefilled cells that still need to be filled.
+  const boardDiv = document.getElementById('sudoku-board');
+  const inputs = boardDiv.getElementsByTagName('input');
+  const empty = [];
+
+  for (let idx = 0; idx < inputs.length; idx++) {
+    const input = inputs[idx];
+    // Cell is editable (not disabled) and has no value
+    if (!input.disabled && input.value === '') {
+      const row = Math.floor(idx / SIZE);
+      const col = idx % SIZE;
+      empty.push([row, col]);
+    }
+  }
+
+  return empty;
+}
+
+async function performDetailedCheck() {
+  // Evaluate the board and highlight both incorrect values and empty cells.
+  const msg = document.getElementById('message');
+  const boardDiv = document.getElementById('sudoku-board');
+  const inputs = boardDiv.getElementsByTagName('input');
+
+  // Get incorrect user-entered values
+  const incorrect = getIncorrectUserCells();
+  // Get empty cells that still need to be filled
+  const empty = getEmptyEditableCells();
+
+  // Create sets for efficient lookup during highlighting
+  const incorrectSet = new Set(incorrect.map(x => x[0] * SIZE + x[1]));
+  const emptySet = new Set(empty.map(x => x[0] * SIZE + x[1]));
+
+  // Clear previous highlights and apply new ones
+  for (let idx = 0; idx < inputs.length; idx++) {
+    const inp = inputs[idx];
+    // Never highlight prefilled cells
+    if (inp.disabled) {
+      inp.classList.remove('incorrect', 'empty');
+      continue;
+    }
+    
+    inp.classList.remove('incorrect', 'empty');
+    if (incorrectSet.has(idx)) {
+      inp.classList.add('incorrect');
+    } else if (emptySet.has(idx)) {
+      inp.classList.add('empty');
+    }
+  }
+
+  // Determine and display feedback message
+  const board = boardFromInputs();
+  const isComplete = board.every(row => row.every(value => value !== 0)) && incorrect.length === 0;
+
+  if (isComplete) {
+    if (!state.completed) {
+      state.completed = true;
+      stopTimer();
+      msg.style.color = '#388e3c';
+      msg.innerText = 'Congratulations! You solved it!';
+      recordScore();
+    }
+  } else {
+    // Build descriptive feedback message
+    if (incorrect.length > 0 && empty.length > 0) {
+      msg.style.color = '#d32f2f';
+      msg.innerText = `${incorrect.length} incorrect, ${empty.length} empty cells.`;
+    } else if (incorrect.length > 0) {
+      msg.style.color = '#d32f2f';
+      msg.innerText = `${incorrect.length} incorrect cell${incorrect.length !== 1 ? 's' : ''}.`;
+    } else if (empty.length > 0) {
+      msg.style.color = '#d32f2f';
+      msg.innerText = `${empty.length} cell${empty.length !== 1 ? 's' : ''} need${empty.length === 1 ? 's' : ''} to be filled.`;
+    } else {
+      msg.style.color = '#388e3c';
+      msg.innerText = 'Keep going!';
+    }
+  }
+}
+
+
 function getStoredTheme() {
   try {
     return localStorage.getItem(THEME_KEY) || 'light';
@@ -372,7 +454,7 @@ window.addEventListener('load', () => {
   document.getElementById('difficulty-select').addEventListener('change', newGame);
   document.getElementById('new-game').addEventListener('click', newGame);
   document.getElementById('hint-button').addEventListener('click', applyHint);
-  document.getElementById('check-solution').addEventListener('click', checkSolution);
+  document.getElementById('check-solution').addEventListener('click', performDetailedCheck);
   document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
   newGame();
 });
